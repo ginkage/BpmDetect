@@ -13,4 +13,4 @@
 .externalNativeBuild
 .cxx
 local.properties
-/app/src/main/fftw-3.3.9
+/app/src/main/cpp/fftw-3.3.9/
