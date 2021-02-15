@@ -2,10 +2,16 @@ package com.ginkage.bpmdetect;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.Typeface;
+import android.icu.util.TimeUnit;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
 import androidx.annotation.NonNull;
+
+import java.time.Duration;
+import java.util.Locale;
 
 public class RenderThread extends Thread implements SurfaceHolder.Callback, BpmDetect.BpmCallback {
     private static final String TAG = "RenderThread";
@@ -21,6 +27,7 @@ public class RenderThread extends Thread implements SurfaceHolder.Callback, BpmD
     private CircularBuffer circularBuffer;
     private SurfaceHolder surfaceHolder;
     private final FreqData freq = new FreqData(WINDOW_SIZE, CaptureThread.SAMPLE_RATE);
+    private final SlidingMedian slidingMedian = new SlidingMedian(Duration.ofSeconds(5).toNanos());
 
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
@@ -91,7 +98,7 @@ public class RenderThread extends Thread implements SurfaceHolder.Callback, BpmD
 
         // Clear with black
         canvas.drawRGB(0, 0, 0);
-        Paint p = new Paint();
+        Paint paint = new Paint();
 
         // Draw the lines
         for (int k = freq.minK, t = k * 2; k < freq.maxK; k++) {
@@ -104,8 +111,8 @@ public class RenderThread extends Thread implements SurfaceHolder.Callback, BpmD
                 prevAmp = 0;
 
                 FreqData.Color c = freq.color[k];
-                p.setARGB(255, c.r, c.g, c.b);
-                canvas.drawLine(x, baseY, x, baseY - y, p);
+                paint.setARGB(255, c.r, c.g, c.b);
+                canvas.drawLine(x, baseY, x, baseY - y, paint);
             }
         }
 
@@ -113,7 +120,7 @@ public class RenderThread extends Thread implements SurfaceHolder.Callback, BpmD
             if (freq.bpm > 0) {
                 int half = height / 2;
                 int size = freq.wx.length;
-                p.setARGB(255, 255, 255, 255);
+                paint.setARGB(255, 255, 255, 255);
                 lastx = width;
                 int lasty = half, miny = half;
                 for (int i = 0; i < size; i++) {
@@ -122,12 +129,19 @@ public class RenderThread extends Thread implements SurfaceHolder.Callback, BpmD
                     if (x == lastx) {
                         miny = Math.min(y, miny);
                     } else {
-                        canvas.drawLine(lastx, lasty, x, miny, p);
+                        canvas.drawLine(lastx, lasty, x, miny, paint);
                         lastx = x;
                         lasty = miny;
                         miny = y;
                     }
                 }
+
+                paint.setTextSize(96);
+                paint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.BOLD));
+                String text = String.format(Locale.getDefault(), "%.1f", freq.bpm);
+                Rect textBounds = new Rect();
+                paint.getTextBounds(text, 0, text.length(), textBounds);
+                canvas.drawText(text, 48, textBounds.height() + 48, paint);
             }
         }
     }
@@ -159,7 +173,7 @@ public class RenderThread extends Thread implements SurfaceHolder.Callback, BpmD
         synchronized (bpmLock) {
             // Log.i(TAG, "Update BPM");
             System.arraycopy(yAxis, 0, freq.wy, 0, yAxis.length);
-            freq.bpm = bpm;
+            freq.bpm = slidingMedian.offer(bpm);
         }
     }
 }
