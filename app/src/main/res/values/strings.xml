@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">BPM Detect</string>
+    <string name="toggle_button">Pause</string>
+    <string name="detecting_bpm">Detecting BPM...</string>
+</resources>
