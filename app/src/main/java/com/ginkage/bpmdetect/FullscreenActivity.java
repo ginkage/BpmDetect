@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.MotionEvent;
+import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 
@@ -47,7 +48,10 @@ public class FullscreenActivity extends AppCompatActivity {
                 @Override
                 public void onActivityResult(Boolean result) {
                     if (result) {
-                        mediaProjectionService.startCapture(renderThread);
+                        captureStarted = true;
+                        if (renderThread != null) {
+                            mediaProjectionService.startCapture(renderThread);
+                        }
                     } else {
                         finish();
                     }
@@ -128,6 +132,38 @@ public class FullscreenActivity extends AppCompatActivity {
     private MediaProjectionService mediaProjectionService;
     private MediaProjectionServiceConnection connection;
     private RenderThread renderThread;
+    private boolean captureStarted;
+
+    private final SurfaceHolder.Callback surfaceHolderCallback = new SurfaceHolder.Callback() {
+        @Override
+        public void surfaceCreated(@NonNull SurfaceHolder holder) {
+            if (renderThread != null) {
+                // Make sure we shut down and clean up the old thread before starting the new one
+                surfaceDestroyed(holder);
+            }
+            renderThread = new RenderThread();
+            renderThread.surfaceCreated(holder);
+            if (captureStarted) {
+                mediaProjectionService.startCapture(renderThread);
+            }
+        }
+
+        @Override
+        public void surfaceChanged(
+                @NonNull SurfaceHolder holder, int format, int width, int height) {
+            if (renderThread != null) {
+                renderThread.surfaceChanged(holder, format, width, height);
+            }
+        }
+
+        @Override
+        public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+            if (renderThread != null) {
+                renderThread.surfaceDestroyed(holder);
+                renderThread = null;
+            }
+        }
+    };
 
     /**
      * Touch listener to use for in-layout UI controls to delay hiding the
@@ -168,8 +204,7 @@ public class FullscreenActivity extends AppCompatActivity {
         // while interacting with the UI.
         findViewById(R.id.toggle_button).setOnTouchListener(mDelayHideTouchListener);
 
-        renderThread = new RenderThread();
-        ((SurfaceView) mContentView).getHolder().addCallback(renderThread);
+        ((SurfaceView) mContentView).getHolder().addCallback(surfaceHolderCallback);
 
         requestPermissionLauncher.launch(RECORD_AUDIO);
     }
@@ -192,6 +227,14 @@ public class FullscreenActivity extends AppCompatActivity {
         // Trigger the initial hide() shortly after the activity has been
         // created, to briefly hint to the user that UI controls
         // are available.
+        //delayedHide(100);
+
+        hide();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         delayedHide(100);
     }
 
@@ -213,7 +256,7 @@ public class FullscreenActivity extends AppCompatActivity {
         mVisible = false;
 
         // Schedule a runnable to remove the status and navigation bar after a delay
-        mHideHandler.removeCallbacks(mShowPart2Runnable);
+        //mHideHandler.removeCallbacks(mShowPart2Runnable);
         mHideHandler.postDelayed(mHidePart2Runnable, UI_ANIMATION_DELAY);
     }
 
@@ -225,7 +268,7 @@ public class FullscreenActivity extends AppCompatActivity {
 
         // Schedule a runnable to display UI elements after a delay
         mHideHandler.removeCallbacks(mHidePart2Runnable);
-        mHideHandler.postDelayed(mShowPart2Runnable, UI_ANIMATION_DELAY);
+        //mHideHandler.postDelayed(mShowPart2Runnable, UI_ANIMATION_DELAY);
     }
 
     /**

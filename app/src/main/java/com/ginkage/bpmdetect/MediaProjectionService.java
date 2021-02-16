@@ -99,9 +99,11 @@ public class MediaProjectionService extends Service {
     }
 
     void startCapture(RenderThread renderThread) {
-        if (mediaProjection != null) {
+        if (mediaProjection != null && captureThread == null) {
             captureThread = new CaptureThread();
             captureThread.startCapture(mediaProjection);
+        }
+        if (captureThread != null) {
             renderThread.setDataSource(captureThread);
         }
     }
