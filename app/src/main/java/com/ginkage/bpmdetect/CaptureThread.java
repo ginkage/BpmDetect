@@ -14,7 +14,7 @@ public class CaptureThread extends Thread {
     private static final String TAG = "CaptureThread";
 
     private static final int BUFFER_SIZE = 524288;
-    private static final int BPM_BUFFER_SIZE = 131072;
+    private static final int BPM_BUFFER_SIZE = 262144;
     static final int SAMPLE_RATE = 48000;
     private static final int CHANNEL_CONFIG = CHANNEL_IN_STEREO;
     private static final int AUDIO_FORMAT = ENCODING_PCM_FLOAT;

@@ -27,7 +27,7 @@ public class RenderThread extends Thread implements SurfaceHolder.Callback, BpmD
     private CircularBuffer circularBuffer;
     private SurfaceHolder surfaceHolder;
     private final FreqData freq = new FreqData(WINDOW_SIZE, CaptureThread.SAMPLE_RATE);
-    private final SlidingMedian slidingMedian = new SlidingMedian(Duration.ofSeconds(5).toNanos());
+    private final SlidingMedian slidingMedian = new SlidingMedian(Duration.ofSeconds(10).toNanos());
 
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
