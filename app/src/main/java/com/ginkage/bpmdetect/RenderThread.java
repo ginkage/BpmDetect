@@ -27,7 +27,14 @@ public class RenderThread extends Thread implements SurfaceHolder.Callback, BpmD
     private CircularBuffer circularBuffer;
     private SurfaceHolder surfaceHolder;
     private final FreqData freq = new FreqData(WINDOW_SIZE, CaptureThread.SAMPLE_RATE);
-    private final SlidingMedian slidingMedian = new SlidingMedian(Duration.ofSeconds(10).toNanos());
+
+    // Precomputed constants for quick maths
+    private final double nsPerSample =
+            Duration.ofSeconds(1).toNanos() / (double) CaptureThread.SAMPLE_RATE;
+    private final double windowNs = CaptureThread.BPM_BUFFER_SIZE * nsPerSample;
+    private final float nsPerMinute = Duration.ofMinutes(1).toNanos();
+
+    private long firstBeatNs;
 
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder holder) {
@@ -142,6 +149,23 @@ public class RenderThread extends Thread implements SurfaceHolder.Callback, BpmD
                 Rect textBounds = new Rect();
                 paint.getTextBounds(text, 0, text.length(), textBounds);
                 canvas.drawText(text, 48, textBounds.height() + 48, paint);
+
+                paint.setARGB(255, 128, 128, 128);
+
+                double periodNs = nsPerMinute / freq.bpm;
+                long time = System.nanoTime();
+
+                // The last beat that fits the screen
+                double lastBeatNs =
+                        firstBeatNs + Math.floor((time - firstBeatNs) / periodNs) * periodNs;
+
+                // Let's say our screen shows the last two seconds...
+                double pxPerNs = width / (double) Duration.ofSeconds(2).toNanos();
+                double x = width + (lastBeatNs - time) * pxPerNs;
+                while (x > 0) {
+                    canvas.drawLine((int) x, 0, (int) x, height, paint);
+                    x -= pxPerNs * periodNs;
+                }
             }
         }
     }
@@ -169,11 +193,18 @@ public class RenderThread extends Thread implements SurfaceHolder.Callback, BpmD
     }
 
     @Override
-    public void onProcess(float[] yAxis, float bpm) {
+    public void onProcess(float[] yAxis, float bpm, long lastRead, int shift) {
         synchronized (bpmLock) {
+            // lastRead is the nanoTime of the last processed sample.
+            // If we subtract window size from it, we'll get nanoTime of the first sample.
+            // If we add shift to that, we'll get the position of a beat (possibly the first one).
+            // Calculate all of this in nanoseconds...
+            firstBeatNs = (long) Math.floor(lastRead - windowNs + shift * nsPerSample + 0.5);
+
             // Log.i(TAG, "Update BPM");
             System.arraycopy(yAxis, 0, freq.wy, 0, yAxis.length);
-            freq.bpm = slidingMedian.offer(bpm);
+            freq.bpm = bpm;
+            freq.shift = shift;
         }
     }
 }

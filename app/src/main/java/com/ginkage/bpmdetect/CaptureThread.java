@@ -7,6 +7,7 @@ import android.media.projection.MediaProjection;
 import android.util.Log;
 
 import static android.media.AudioAttributes.USAGE_MEDIA;
+import static android.media.AudioAttributes.USAGE_UNKNOWN;
 import static android.media.AudioFormat.CHANNEL_IN_STEREO;
 import static android.media.AudioFormat.ENCODING_PCM_FLOAT;
 
@@ -14,7 +15,7 @@ public class CaptureThread extends Thread {
     private static final String TAG = "CaptureThread";
 
     private static final int BUFFER_SIZE = 524288;
-    private static final int BPM_BUFFER_SIZE = 262144;
+    static final int BPM_BUFFER_SIZE = 131072;
     static final int SAMPLE_RATE = 48000;
     private static final int CHANNEL_CONFIG = CHANNEL_IN_STEREO;
     private static final int AUDIO_FORMAT = ENCODING_PCM_FLOAT;
@@ -66,6 +67,7 @@ public class CaptureThread extends Thread {
         AudioPlaybackCaptureConfiguration configuration =
                 new AudioPlaybackCaptureConfiguration.Builder(mediaProjection)
                         .addMatchingUsage(USAGE_MEDIA)
+                        .addMatchingUsage(USAGE_UNKNOWN)
                         .build();
 
         int minSize = Math.max(BUFFER_SIZE * 4 * 2,

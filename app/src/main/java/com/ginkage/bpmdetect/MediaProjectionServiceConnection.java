@@ -28,7 +28,8 @@ public class MediaProjectionServiceConnection {
                 @Override
                 public void onServiceConnected(ComponentName className, IBinder service) {
                     if (service != null) {
-                        MediaProjectionService.LocalBinder binder = (MediaProjectionService.LocalBinder) service;
+                        MediaProjectionService.LocalBinder binder =
+                                (MediaProjectionService.LocalBinder) service;
                         MediaProjectionServiceConnection.this.service = binder.getService();
                         listener.onServiceConnected(MediaProjectionServiceConnection.this.service);
                     }

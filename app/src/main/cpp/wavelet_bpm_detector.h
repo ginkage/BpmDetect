@@ -2,11 +2,13 @@
 
 #include "wavelet.h"
 #include "freq_data.h"
+#include "correlate.h"
+#include "sliding_median.h"
 
 #include <fftw-3.3.9/api/fftw3.h>
 #include <memory>
 #include <vector>
-#include <jni.h>
+#include <chrono>
 
 /**
  * Class <code>WaveletBPMDetector</code> can be used to
@@ -46,11 +48,9 @@ public:
     FreqData *computeWindowBpm(const float* data);
 
     // For testing
-    std::vector<float> correlate(std::vector<float>& data);
+    std::vector<float> autocorrelate(std::vector<float>& data);
 
     FreqData *getData();
-
-    int getSize() { return windowSize; }
 
 private:
     void recombine(std::vector<float>& data);
@@ -76,6 +76,14 @@ private:
     fftwf_complex* out;
     fftwf_plan plan_forward;
     fftwf_plan plan_back;
+
+    using Timestamp = std::chrono::steady_clock::time_point;
+    using Duration = std::chrono::steady_clock::duration;
+    SlidingMedian<float, Timestamp, Duration> slidingMedian;
+
+    Correlate correlate;
+    std::vector<float> rect;
+    std::vector<float> comb;
 
     FreqData freq;
 };

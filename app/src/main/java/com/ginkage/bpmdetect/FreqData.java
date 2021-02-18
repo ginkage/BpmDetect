@@ -18,6 +18,7 @@ public class FreqData {
     float bpm;
     float[] wx;
     float[] wy;
+    int shift;
 
     // "Saw" function with specified range, peaks at (p / 2).
     private static double saw(double val, double p)
@@ -71,7 +72,7 @@ public class FreqData {
         double maxNote = 110;
         double kx = width / (maxNote - minNote);
 
-        // Recalcualte the lines positions
+        // Recalculate the lines positions
         for (int k = minK; k < maxK; k++) {
             x[k] = (int) ((note[k] - minNote) * kx + 0.5);
         }
