@@ -12,7 +12,7 @@ WaveletBPMDetector::WaveletBPMDetector(int rate, int size)
     : sampleRate(rate)
     , windowSize(size)
     , levels(4)
-    , maxPace(1 << (levels - 1))
+    , maxPace(1u << (levels - 1))
     , corrSize(size / maxPace)
     , corr(corrSize)
     , wavelet(size, levels)
@@ -58,29 +58,21 @@ WaveletBPMDetector::~WaveletBPMDetector()
 int WaveletBPMDetector::detectPeak(std::vector<float>& data)
 {
     float max = FLT_MIN, maxP = FLT_MIN;
-
-    // Straighten the curve
-    for (int i = minIndex; i < maxIndex; ++i) {
-        data[i] /= float(windowSize - i);
-    }
-
     for (int i = minIndex; i < maxIndex; ++i) {
         max = std::max(max, std::fabs(data[i]));
         maxP = std::max(maxP, data[i]);
     }
 
     float scale = 1.0f / max;
+    int k = -1;
     for (int i = minIndex; i < maxIndex; ++i) {
         freq.wy[i - minIndex] = data[i] * scale;
-    }
-
-    for (int i = minIndex; i < maxIndex; ++i) {
-        if (data[i] == maxP) {
-            return i;
+        if (data[i] == maxP && k < 0) {
+            k = i;
         }
     }
 
-    return -1;
+    return k;
 }
 
 static void undersample(std::vector<float>& data, unsigned int pace, std::vector<float>& out)
@@ -93,6 +85,10 @@ static void undersample(std::vector<float>& data, unsigned int pace, std::vector
 
 void WaveletBPMDetector::recombine(std::vector<float>& data)
 {
+    for (float& value : data) {
+        value = std::fabs(value);
+    }
+
     float mean = std::accumulate(data.begin(), data.end(), 0.0f) / (float)data.size();
 
     for (int i = 0; i < dCMinLength; ++i) {
