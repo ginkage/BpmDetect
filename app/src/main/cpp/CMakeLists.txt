@@ -6,7 +6,7 @@ find_library(log-lib log)
 
 include_directories(.)
 
-add_subdirectory(fftw-3.3.9)
+add_subdirectory(fftw-3.3.10)
 
 # General Sources
 file(GLOB general_srcs "*.cpp")

@@ -1,5 +1,7 @@
 package com.ginkage.bpmdetect;
 
+import static android.app.PendingIntent.FLAG_IMMUTABLE;
+
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -126,7 +128,7 @@ public class MediaProjectionService extends Service {
                         .setAction(Intent.ACTION_MAIN)
                         .addCategory(Intent.CATEGORY_LAUNCHER);
 
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, FLAG_IMMUTABLE);
 
         return new Notification.Builder(this, NOTIFICATION_CHANNEL_ID)
                 .setLocalOnly(true)
