@@ -18,7 +18,8 @@
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:screenOrientation="landscape"
             android:label="@string/app_name"
-            android:theme="@style/Theme.BpmDetect.Fullscreen">
+            android:theme="@style/Theme.BpmDetect.Fullscreen"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

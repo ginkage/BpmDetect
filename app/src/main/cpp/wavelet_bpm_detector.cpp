@@ -21,15 +21,12 @@ WaveletBPMDetector::WaveletBPMDetector(int rate, int size)
     , dCSum(dCMinLength)
     , minute(sampleRate * 60.0f / maxPace)
     , minIndex(minute / 220.0f)
-    , maxIndex(minute / 40.0f)
+    , maxIndex(minute / std::max(40.0f, sampleRate * 180.0f / windowSize))
     , in(corr.data())
     , out(fftwf_alloc_complex(corrSize / 2 + 1))
     , plan_forward(fftwf_plan_dft_r2c_1d(corrSize, in, out, FFTW_MEASURE))
     , plan_back(fftwf_plan_dft_c2r_1d(corrSize, out, in, FFTW_MEASURE))
     , slidingMedian(std::chrono::seconds(5))
-    , correlate(size)
-    , rect(size)
-    , comb(size)
 {
     maxIndex = std::min(maxIndex, dCMinLength);
     freq.wx = std::vector<float>(maxIndex - minIndex);
@@ -129,11 +126,11 @@ FreqData *WaveletBPMDetector::computeWindowBpm(const float* data)
     for (unsigned int loop = 0, pace = maxPace; loop < levels; ++loop, pace >>= 1) {
         // Extract envelope from detail coefficients
         //  1) Undersample
-        //  2) Absolute value (actually, input array already contains absolute values)
+        //  2) Absolute value
         //  3) Subtract mean
         undersample(decomp[loop].second, pace, dC);
 
-        // Recombine detail coeffients
+        // Recombine detail coefficients
         recombine(dC);
     }
 
@@ -151,25 +148,6 @@ FreqData *WaveletBPMDetector::computeWindowBpm(const float* data)
 
     // Convert it to sliding window median BPM
     freq.bpm = slidingMedian.offer(std::make_pair(tmp_bpm, std::chrono::steady_clock::now()));
-
-    // Comb filter with target BPM pattern
-    memcpy(rect.data(), data, windowSize * sizeof(float));
-    std::fill(comb.begin(), comb.end(), 0);
-    float step = freq.bpm / (sampleRate * 60.0f);
-    float accum = 1;
-
-    // Fill in periodical peaks, trying to stay as close to the period as possible
-    for (int i = 0; i < windowSize; i++) {
-        if (accum >= 1) {
-            comb[i] = 1;
-            accum -= 1;
-        }
-        accum += step;
-    }
-
-    // Correlate the two arrays, find the shift in samples.
-    // We don't care if it's not the first beat.
-    freq.shift = correlate.correlate(rect, comb);
 
     return &freq;
 }

@@ -2,7 +2,6 @@
 
 #include "wavelet.h"
 #include "freq_data.h"
-#include "correlate.h"
 #include "sliding_median.h"
 
 #include <fftw-3.3.9/api/fftw3.h>
@@ -80,10 +79,6 @@ private:
     using Timestamp = std::chrono::steady_clock::time_point;
     using Duration = std::chrono::steady_clock::duration;
     SlidingMedian<float, Timestamp, Duration> slidingMedian;
-
-    Correlate correlate;
-    std::vector<float> rect;
-    std::vector<float> comb;
 
     FreqData freq;
 };

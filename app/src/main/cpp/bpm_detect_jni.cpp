@@ -27,7 +27,7 @@ namespace {
 
             jclass clazz = env->FindClass("com/ginkage/bpmdetect/BpmDetect");
             method_on_create_ = env->GetMethodID(clazz, "onCreate", "([F)V");
-            method_on_process_ = env->GetMethodID(clazz, "onProcess", "([FFI)V");
+            method_on_process_ = env->GetMethodID(clazz, "onProcess", "([FF)V");
         }
 
         void onCreate(float *wx) {
@@ -35,9 +35,9 @@ namespace {
             env_->CallVoidMethod(obj_, method_on_create_, dst_wx_);
         }
 
-        void onProcess(float *wy, float bpm, int shift) {
+        void onProcess(float *wy, float bpm) {
             env_->SetFloatArrayRegion(dst_wy_, 0, size_, reinterpret_cast<const jfloat *>(wy));
-            env_->CallVoidMethod(obj_, method_on_process_, dst_wy_, bpm, shift);
+            env_->CallVoidMethod(obj_, method_on_process_, dst_wy_, bpm);
         }
 
         void onDestroy() {
@@ -81,7 +81,7 @@ JNI_METHOD(void, nativeProcess)
     FreqData *output = detector->computeWindowBpm(elements);
     env->ReleaseFloatArrayElements(data, elements, 0);
     auto *callbacks = reinterpret_cast<JNIThreadCallbacks *>(output->callbacks);
-    callbacks->onProcess(output->wy.data(), output->bpm, output->shift);
+    callbacks->onProcess(output->wy.data(), output->bpm);
 }
 
 JNI_METHOD(void, nativeDestroy)

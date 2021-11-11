@@ -8,15 +8,13 @@ class BpmDetect {
 
     interface BpmCallback {
         void onCreate(float[] xAxis);
-        void onProcess(float[] yAxis, float bpm, long lastRead, int shift);
+        void onProcess(float[] yAxis, float bpm);
     }
 
     private final long nativeBpmDetectPtr;
     private final BpmCallback callback;
     private final CircularBuffer samples;
     private final float[] values;
-
-    private long lastRead;
 
     static {
         System.loadLibrary("bpm_detect_jni");
@@ -31,7 +29,6 @@ class BpmDetect {
 
     synchronized void processSamples() {
         if (samples.getLatest() >= values.length) {
-            lastRead = System.nanoTime();
             samples.read(values, values.length);
             nativeProcess(nativeBpmDetectPtr, values);
         }
@@ -45,8 +42,8 @@ class BpmDetect {
         callback.onCreate(xAxis);
     }
 
-    void onProcess(float[] yAxis, float bpm, int shift) {
-        callback.onProcess(yAxis, bpm, lastRead, shift);
+    void onProcess(float[] yAxis, float bpm) {
+        callback.onProcess(yAxis, bpm);
     }
 
     private native long nativeInit(int sampleRate, int windowSize);
